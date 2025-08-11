@@ -1,0 +1,13 @@
+{% extends "index.html" %}
+
+{% block title %}Registrierung{% endblock %}
+
+{% block content %}
+    <!-- Ihr Formular -->
+    <form action="/register" method="post">
+        <input type="email"   name="email" placeholder="E-Mail" required>
+        <input type="password" name="password" placeholder="Passwort" required>
+        <input type="text"    name="name" placeholder="Name" required>
+        <button type="submit">Registrieren</button>
+    </form>
+{% endblock %}

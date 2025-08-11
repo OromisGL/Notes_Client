@@ -1,21 +1,45 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body
+from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form 
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from pathlib import Path
 from schemas.schemas import UserCreate, UserLogin, TokenOut,UserOut, NotesOut, NoteCreate
 from traffic.TokenManage import TokenManager
 from traffic.NotesClient import NotesClient
 
-router = APIRouter(prefix="/user", tags=["User"])
 
-@router.post("/register", response_model=UserOut)
-def register_user(request: Request, data: UserCreate):
-    tm = TokenManager(data.email, data.password)
-    
+router = APIRouter(prefix="/user", tags=["User"])
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+@router.get("/", response_class=HTMLResponse)
+async def show_form(request: Request):
+    return templates.TemplateResponse("auth/register.html", {"request": request})
+
+@router.post("/register", response_class=HTMLResponse)
+async def register_user(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(...),
+):
+    tm = TokenManager(email, password)
     try:
-        new_user = tm.register(data.name)
+        new_user = tm.register(name)
     except Exception as e:
-        # z.B. 400 wenn E-Mail schon existiert
-        raise HTTPException(status_code=400, detail=str(e))
-    return new_user
+        # z. B. E-Mail existiert schon
+        return templates.TemplateResponse(
+            "auth/register.html",
+            {"request": request, "error": str(e)},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    # Erfolg – z. B. Bestätigungsseite rendern
+    return templates.TemplateResponse(
+        "success.html",
+        {"request": request, "user": new_user},
+        status_code=status.HTTP_201_CREATED,
+    )
 
 @router.post("/login")
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
