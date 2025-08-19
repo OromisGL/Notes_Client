@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form 
+from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
+from requests import request
 from pathlib import Path
-from schemas.schemas import UserCreate, UserLogin, TokenOut,UserOut, NotesOut, NoteCreate
 from traffic.TokenManage import TokenManager
 from traffic.NotesClient import NotesClient
 
@@ -13,37 +13,46 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-@router.get("/", response_class=HTMLResponse)
-async def show_form(request: Request):
+@router.get("/", response_class=HTMLResponse, name="index")
+def show_form(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@router.get("/auth/register", response_class=HTMLResponse, name="register_page")
+def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
-@router.post("/register", response_class=HTMLResponse)
-async def register_user(
+@router.get("/auth/login", response_class=HTMLResponse, name="login_page")
+def login_page(request: Request):
+    return templates.TemplateResponse("auth/login.html", {"request": request})
+
+@router.post("/auth/register", name="register")
+def register_user(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
-    name: str = Form(...),
-):
+    name: str = Form(...)
+    ):
+    
     tm = TokenManager(email, password)
+    
     try:
-        new_user = tm.register(name)
+        tm.register(name)
     except Exception as e:
-        # z. B. E-Mail existiert schon
         return templates.TemplateResponse(
             "auth/register.html",
             {"request": request, "error": str(e)},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    # Erfolg – z. B. Bestätigungsseite rendern
-    return templates.TemplateResponse(
-        "success.html",
-        {"request": request, "user": new_user},
-        status_code=status.HTTP_201_CREATED,
-    )
+    
+    token = tm.get_token()
+    resp = RedirectResponse(url=request.url_for("get_notes"), status_code=303)
+    resp.set_cookie("access_token", token, httponly=True, samesite="lax")
+    
+    return resp
 
-@router.post("/login")
-def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
-    tm = TokenManager(form_data.username, form_data.password)
+@router.post("/auth/login", name="login")
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    tm = TokenManager(username, password)
     
     try:
         tm.authenticate()
@@ -52,27 +61,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     
     # httpOnly-Cookie
     token = tm.get_token()
-    response.set_cookie("access_token", token, httponly=True)
-    return {"access_token": token, "token_type": "bearer"}
-
-@router.get("/notes")
-def get_notes(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
-    nc = NotesClient(token=token) 
-    return nc.list_all()
-
-@router.post("/notes", response_model=NotesOut)
-def post_notes(request: Request, note: NoteCreate):
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
-    nc = NotesClient(token=token)
+    resp = RedirectResponse(url=request.url_for("get_notes"), status_code=303)
+    resp.set_cookie("access_token", token, httponly=True, samesite="lax")
     
-    try:
-        created = nc.post(title=note.title, text=note.text, category=note.category)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=(e))
-
-    return created
+    return resp

@@ -5,7 +5,14 @@
         <title>{% block title %}{% endblock %}</title>
     </head>
     <body>
-        {% block content %}{% endblock %}
+        <a href="{{ request.url_for('register_page') }}">Register</a>
+        <a href="{{ request.url_for('login_page') }}">Login</a>
+        <a href="{{ request.url_for('get_notes') }}">Notes</a>
+        
+        {% block content %}
+            
+        {% endblock content %}
+            
         <div id="error">{{ error|default('') }}</div>
     </body>
 </html>

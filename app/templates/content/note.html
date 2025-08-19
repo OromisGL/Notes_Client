@@ -5,5 +5,22 @@ Note
 {% endblock %}
 
 {% block content %}
-    
+    <form action="{{ request.url_for('create_note') }}" method="post">
+        <input type="text" name="title" placeholder="Title"> <br>
+        <textarea name="text" placeholder="Note"></textarea> <br>
+        <input type="text" name="category" placeholder="Category"> <br>
+        <hr>
+        <button type="submit">Create</button>
+    </form>
+    <form action="{{ request.url_for('get_notes') }}" method="get">
+        {% for col in notes %}
+            <div>
+                <h3>{{ col["title"] }}</h3>
+                <div>
+                    <a name="note" id="{{ notes['id'] }}">{{ col["text"] }}</a>
+                </div>
+            </div>
+        <hr>
+        {% endfor %}
+    </form>
 {% endblock %}

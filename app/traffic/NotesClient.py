@@ -14,7 +14,7 @@ class NotesClient:
         resp.raise_for_status()
         return resp.json()
 
-    def post(self, title: str, text: str, category: int):
+    def post(self, title: str, text: str, category: str):
         resp = requests.post(
             f"{self.base_url}/post",
             json={"title": title, "text": text, "category": category},
