@@ -29,3 +29,11 @@ class NotesClient:
             headers=self._auth_header()
         )
         resp.raise_for_status()
+    
+    def list_all_cat(self):
+        resp = requests.get(
+            f"{self.base_url}/category/",
+            headers=self._auth_header()
+        )
+        resp.raise_for_status()
+        return resp.json()

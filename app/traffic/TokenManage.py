@@ -22,6 +22,7 @@ class TokenManager:
         self.public_key = None
     
     def authenticate(self):
+        print("auth funktion")
         resp = requests.post(
             LOGIN_URL,
             data={
@@ -33,7 +34,6 @@ class TokenManager:
         self.expires_at = time.time() + ACCESS_TOKEN_LIFETIME
     
     def register(self, name: str):
-        print(name, self.username, self.password)
         resp = requests.post(
             REGISTER_URL,
             json={

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from requests import request
+from requests import request, HTTPError
 from pathlib import Path
 from traffic.TokenManage import TokenManager
 from traffic.NotesClient import NotesClient
@@ -37,12 +37,15 @@ def register_user(
     
     try:
         tm.register(name)
-    except Exception as e:
-        return templates.TemplateResponse(
-            "auth/register.html",
-            {"request": request, "error": str(e)},
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    except HTTPError as e:
+        if e.response is not None and e.response.status_code == 409:
+            resp = templates.TemplateResponse(
+                "auth/register.html",
+                {"request": request, "error": "E-Mail ist schon vergeben."},
+                status_code=401)
+            resp.delete_cookie("access_token")
+            return resp
+        raise
     
     token = tm.get_token()
     resp = RedirectResponse(url=request.url_for("get_notes"), status_code=303)
@@ -56,8 +59,8 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     
     try:
         tm.authenticate()
-    except Exception:
-        raise HTTPException(status_code=401, detail="Ungültige Zugangsdaten.")
+    except:
+        return templates.TemplateResponse("auth/login.html", {"request": request})
     
     # httpOnly-Cookie
     token = tm.get_token()

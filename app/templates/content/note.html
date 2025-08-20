@@ -9,8 +9,12 @@ Note
     <form action="{{ request.url_for('create_note') }}" method="post">
         <input type="text" name="title" placeholder="Title"> <br>
         <textarea name="text" placeholder="Note"></textarea> <br>
-        <input type="text" name="category" placeholder="Category"> <br>
-
+        <input list="category" name="category" placeholder="Category"> <br>
+        <datalist id="category">
+            {% for category in categories %}
+                <option value="{{ category['description'] }}">
+            {% endfor %}
+        </datalist>
         <button type="submit">Create</button>
     </form>
     <hr>
