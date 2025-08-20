@@ -16,11 +16,29 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @router.get("/note", response_class=HTMLResponse, name="get_notes")
 def get_notes(request: Request):
     token = request.cookies.get("access_token")
-    print(token)
+
     if not token:
         raise HTTPException(status_code=401, detail="Nicht authentifiziert")
-    notes = NotesClient(token=token).list_all()
+    notes = NotesClient(token).list_all()[::-1]
+    
+    return templates.TemplateResponse(
+        "content/note.html", {
+            "request": request,
+            "notes": notes
+        })
 
+@router.post("/delete", name="delete_ui")
+def delete_note(request: Request, note_id: int = Form(...)):
+    token = request.cookies.get("access_token")
+    data = NotesClient(token)
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
+    
+    data.delete(note_id)
+    
+    notes = data.list_all()[::-1]
+    
     return templates.TemplateResponse(
         "content/note.html", {
             "request": request,
@@ -39,7 +57,10 @@ def post_notes(request: Request, title: str = Form(...), text: str = Form(...), 
     except Exception as e:
         raise HTTPException(status_code=400, detail=(e))
     
+    notes = NotesClient(token).list_all()[::-1]
+    
     return templates.TemplateResponse(
         "content/note.html", {
             "request": request,
+            "notes": notes
         })

@@ -5,22 +5,26 @@ Note
 {% endblock %}
 
 {% block content %}
+
     <form action="{{ request.url_for('create_note') }}" method="post">
         <input type="text" name="title" placeholder="Title"> <br>
         <textarea name="text" placeholder="Note"></textarea> <br>
         <input type="text" name="category" placeholder="Category"> <br>
-        <hr>
+
         <button type="submit">Create</button>
     </form>
-    <form action="{{ request.url_for('get_notes') }}" method="get">
-        {% for col in notes %}
-            <div>
-                <h3>{{ col["title"] }}</h3>
-                <div>
-                    <a name="note" id="{{ notes['id'] }}">{{ col["text"] }}</a>
-                </div>
-            </div>
-        <hr>
-        {% endfor %}
-    </form>
+    <hr>
+
+{% for col in notes %}
+    <div id="note-{{ col['id'] }}">
+        <h3>{{ col['title'] }}</h3>
+        <p>{{ col['text'] }}</p>
+        <form method="post" action="{{ request.url_for('delete_ui') }}">
+            <input type="hidden" name="note_id" value="{{ col['id'] }}">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    <hr>
+{% endfor %}
+
 {% endblock %}

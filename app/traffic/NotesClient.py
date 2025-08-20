@@ -22,3 +22,10 @@ class NotesClient:
         )
         resp.raise_for_status()
         return resp.json()
+    
+    def delete(self, id: int):
+        resp = requests.delete(
+            f"{self.base_url}/delete/{id}",
+            headers=self._auth_header()
+        )
+        resp.raise_for_status()
