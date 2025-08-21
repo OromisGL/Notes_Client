@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form 
+from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -74,6 +74,70 @@ def delete_note(request: Request, note_id: int = Form(...)):
         "content/note.html", {
             "request": request,
             "notes": notes
+        })
+    
+@router.get("/edit", name="edit")
+def register_page(request: Request, note_id: int = Query(...)):
+    token = request.cookies.get("access_token")
+    
+    if not token:
+        return templates.TemplateResponse(
+            "auth/login.html", 
+            {"request": request, "error": "Bitte anmelden oder Registrieren."},
+            status_code=401)
+    
+    try:
+        data = NotesClient(token)
+        data.get_note(note_id)
+        categories = data.list_all_cat()
+    except HTTPError as e:
+        if e.response is not None and e.response.status_code in (401, 403):
+            resp = templates.TemplateResponse(
+                "auth/login.html",
+                {"request": request, "error": "Sitzung Abgelaufen. Bitte erneut anmelden."},
+                status_code=401)
+            resp.delete_cookie("access_token")
+            return resp
+        raise
+    
+    return templates.TemplateResponse(
+        "content/update.html", 
+        {"request": request, "data": data, "categories": categories})
+
+@router.post("/update", name="update_ui")
+def update(request: Request,
+        id: int = Form(...),
+        title: str = Form(...),
+        text: str = Form(...),
+        category: str = Form(...)):
+
+    token = request.cookies.get("access_token")
+    
+    if not token:
+        return templates.TemplateResponse(
+            "auth/login.html", 
+            {"request": request, "error": "Bitte anmelden oder Registrieren."},
+            status_code=401)
+        
+    nc = NotesClient(token)
+    
+    try:
+        nc.updater(id, title, text, category)
+        categories = nc.list_all_cat()
+    except HTTPError as e:
+        if e.response is not None and e.response.status_code in (401, 403):
+            resp = templates.TemplateResponse(
+                "auth/login.html",
+                {"request": request, "error": "Sitzung Abgelaufen. Bitte erneut anmelden."},
+                status_code=401)
+            resp.delete_cookie("access_token")
+            return resp
+        raise
+    
+    return templates.TemplateResponse(
+        "content/note.html", {
+            "request": request,
+            "categories": categories
         })
 
 @router.post("/post", name="create_note")

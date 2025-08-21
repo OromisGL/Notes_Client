@@ -21,12 +21,14 @@ Note
 
 {% for col in notes %}
     <div id="note-{{ col['id'] }}">
-        <h3>{{ col['title'] }}</h3>
-        <p>{{ col['text'] }}</p>
         <form method="post" action="{{ request.url_for('delete_ui') }}">
             <input type="hidden" name="note_id" value="{{ col['id'] }}">
             <button type="submit">Delete</button>
         </form>
+        <a href="{{ request.url_for('edit', note_id=col['id']) }}">Edit</a>
+        <h3>{{ col['title'] }}</h3>
+        <h5>category: {{ col['category'] }}</h5>
+        <p>{{ col['text'] }}</p>
     </div>
     <hr>
 {% endfor %}

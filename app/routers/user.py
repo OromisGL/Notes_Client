@@ -59,8 +59,14 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     
     try:
         tm.authenticate()
-    except:
-        return templates.TemplateResponse("auth/login.html", {"request": request})
+    except HTTPError as e:
+        if e.response is not None and e.response.status_code == 401:
+            resp = templates.TemplateResponse(
+                "auth/login.html",
+                {"request": request, "error": "Login Daten sind Falsch."},
+                status_code=401)
+            return resp
+        raise
     
     # httpOnly-Cookie
     token = tm.get_token()

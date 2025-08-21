@@ -13,6 +13,14 @@ class NotesClient:
         resp = requests.get(self.base_url, headers=self._auth_header())
         resp.raise_for_status()
         return resp.json()
+    
+    def get_note(self, note_id: int):
+        resp = requests.get(
+            f"{self.base_url}", 
+            {"id":note_id}, 
+            headers=self._auth_header())
+        resp.raise_for_status()
+        return resp.json()
 
     def post(self, title: str, text: str, category: str):
         resp = requests.post(
@@ -21,7 +29,14 @@ class NotesClient:
             headers=self._auth_header()
         )
         resp.raise_for_status()
-        return resp.json()
+    
+    def updater(self, id: int, title: str, text: str, category: str):
+        resp = requests.post(
+            f"{self.base_url}/update/{id}",
+            json={"title": title, "text": text, "category": category},
+            headers=self._auth_header()
+        )
+        resp.raise_for_status()
     
     def delete(self, id: int):
         resp = requests.delete(
