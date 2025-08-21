@@ -16,8 +16,7 @@ class NotesClient:
     
     def get_note(self, note_id: int):
         resp = requests.get(
-            f"{self.base_url}", 
-            {"id":note_id}, 
+            f"{self.base_url}/{note_id}", 
             headers=self._auth_header())
         resp.raise_for_status()
         return resp.json()
@@ -33,7 +32,7 @@ class NotesClient:
     def updater(self, id: int, title: str, text: str, category: str):
         resp = requests.post(
             f"{self.base_url}/update/{id}",
-            json={"title": title, "text": text, "category": category},
+            json={"id": id, "title": title, "text": text, "category": category},
             headers=self._auth_header()
         )
         resp.raise_for_status()
@@ -47,7 +46,7 @@ class NotesClient:
     
     def list_all_cat(self):
         resp = requests.get(
-            f"{self.base_url}/category/",
+            f"{self.base_url}/category",
             headers=self._auth_header()
         )
         resp.raise_for_status()

@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-@router.get("/note", response_class=HTMLResponse, name="get_notes")
+@router.get("/note", name="get_notes")
 def get_notes(request: Request):
     token = request.cookies.get("access_token")
 
@@ -76,7 +76,7 @@ def delete_note(request: Request, note_id: int = Form(...)):
             "notes": notes
         })
     
-@router.get("/edit", name="edit")
+@router.get("/edit", name="edit_ui")
 def register_page(request: Request, note_id: int = Query(...)):
     token = request.cookies.get("access_token")
     
@@ -88,7 +88,7 @@ def register_page(request: Request, note_id: int = Query(...)):
     
     try:
         data = NotesClient(token)
-        data.get_note(note_id)
+        result = data.get_note(note_id)
         categories = data.list_all_cat()
     except HTTPError as e:
         if e.response is not None and e.response.status_code in (401, 403):
@@ -100,9 +100,10 @@ def register_page(request: Request, note_id: int = Query(...)):
             return resp
         raise
     
+    print(result)
     return templates.TemplateResponse(
         "content/update.html", 
-        {"request": request, "data": data, "categories": categories})
+        {"request": request, "data": result, "categories": categories})
 
 @router.post("/update", name="update_ui")
 def update(request: Request,
@@ -123,6 +124,7 @@ def update(request: Request,
     
     try:
         nc.updater(id, title, text, category)
+        notes = nc.list_all()[::-1]
         categories = nc.list_all_cat()
     except HTTPError as e:
         if e.response is not None and e.response.status_code in (401, 403):
@@ -137,6 +139,7 @@ def update(request: Request,
     return templates.TemplateResponse(
         "content/note.html", {
             "request": request,
+            "notes": notes,
             "categories": categories
         })
 
