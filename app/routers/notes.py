@@ -1,9 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form, Query
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Request, Form, Query
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
-from schemas.schemas import NotesOut, NoteCreate
-from traffic.TokenManage import TokenManager
 from traffic.NotesClient import NotesClient
 from pathlib import Path
 from requests import HTTPError
@@ -89,6 +85,7 @@ def register_page(request: Request, note_id: int = Query(...)):
     try:
         data = NotesClient(token)
         result = data.get_note(note_id)
+        print("category ", result['category_rel']['description'])
         categories = data.list_all_cat()
     except HTTPError as e:
         if e.response is not None and e.response.status_code in (401, 403):
@@ -100,19 +97,21 @@ def register_page(request: Request, note_id: int = Query(...)):
             return resp
         raise
     
-    print(result)
     return templates.TemplateResponse(
         "content/update.html", 
         {"request": request, "data": result, "categories": categories})
 
 @router.post("/update", name="update_ui")
-def update(request: Request,
-        id: int = Form(...),
+def update(
+        request: Request,
+        note_id: int = Form(...),
         title: str = Form(...),
         text: str = Form(...),
         category: str = Form(...)):
 
     token = request.cookies.get("access_token")
+    
+    print(title, text, type(category))
     
     if not token:
         return templates.TemplateResponse(
@@ -123,7 +122,7 @@ def update(request: Request,
     nc = NotesClient(token)
     
     try:
-        nc.updater(id, title, text, category)
+        nc.updater(note_id, title, text, category)
         notes = nc.list_all()[::-1]
         categories = nc.list_all_cat()
     except HTTPError as e:
@@ -144,7 +143,12 @@ def update(request: Request,
         })
 
 @router.post("/post", name="create_note")
-def post_notes(request: Request, title: str = Form(...), text: str = Form(...), category: str = Form(...)):
+def post_notes(
+        request: Request, 
+        title: str = Form(...), 
+        text: str = Form(...), 
+        category: str = Form(...)
+        ):
     token = request.cookies.get("access_token")
     
     if not token:

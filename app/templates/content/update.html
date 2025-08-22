@@ -7,10 +7,10 @@ Update
 {% block content %}
 
     <form method="post" action="{{ request.url_for('update_ui') }}">
-        <input type="hidden" name="id" value="{{ data['id'] }}">
+        <input type="hidden" name="note_id" value="{{ data['id'] }}">
         <input type="text" name="title" value="{{ data['title'] }}"> <br>
         <textarea name="text" >{{ data['text'] }}</textarea> <br>
-        <input name="category" value="{{ data['category'] }}"> <br>
+        <input name="category" value="{{ data['category_rel']['description']}}"> <br>
         <button type="submit">Update</button>
     </form>
 

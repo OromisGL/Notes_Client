@@ -1,11 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, Response, status, Body, Form
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from requests import request, HTTPError
+from requests import HTTPError
 from pathlib import Path
 from traffic.TokenManage import TokenManager
-from traffic.NotesClient import NotesClient
 
 
 router = APIRouter(prefix="/user", tags=["User"])
