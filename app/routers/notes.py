@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Form, Query
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from traffic.NotesClient import NotesClient
 from pathlib import Path
 from requests import HTTPError
@@ -71,7 +72,7 @@ def delete_note(request: Request, note_id: int = Form(...)):
             "request": request,
             "notes": notes
         })
-    
+
 @router.get("/edit", name="edit_ui")
 def register_page(request: Request, note_id: int = Query(...)):
     token = request.cookies.get("access_token")
@@ -85,7 +86,6 @@ def register_page(request: Request, note_id: int = Query(...)):
     try:
         data = NotesClient(token)
         result = data.get_note(note_id)
-        print("category ", result['category_rel']['description'])
         categories = data.list_all_cat()
     except HTTPError as e:
         if e.response is not None and e.response.status_code in (401, 403):
@@ -110,8 +110,6 @@ def update(
         category: str = Form(...)):
 
     token = request.cookies.get("access_token")
-    
-    print(title, text, type(category))
     
     if not token:
         return templates.TemplateResponse(
@@ -150,6 +148,11 @@ def post_notes(
         category: str = Form(...)
         ):
     token = request.cookies.get("access_token")
+    
+    if len(text) < 1:
+        resp = RedirectResponse(url=request.url_for("get_notes"), status_code=303)
+        resp.set_cookie("access_token", token, httponly=True, samesite="lax")
+        return resp
     
     if not token:
         return templates.TemplateResponse(
